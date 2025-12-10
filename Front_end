@@ -1,5 +1,5 @@
 <!-- ===========================
-     BURNOUT SELF-CHECK WIDGET
+     Burnout Self-Check Widget
      Quiz + Results + Email Capture
      =========================== -->
 
@@ -74,6 +74,751 @@
       margin: 0.15rem 1.5rem 0.15rem 0;
       margin-left: 0;
     }
+  }
+
+  /* ===============================
+     Pre-submit info box
+     =============================== */
+  .burnout-pre-submit-box {
+    max-width: 800px;
+    margin: 0.75rem auto 1.25rem;
+    background: #f4f7fa;
+    border-radius: 12px;
+    padding: 1.25rem 1.4rem;
+    font-size: 0.97rem;
+    line-height: 1.55;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    border: 1px solid #d4d4d8;
+  }
+
+  .burnout-pre-submit-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .burnout-pre-submit-note {
+    margin-top: 0.75rem;
+    font-size: 0.93rem;
+    color: #555;
+  }
+
+  /* ===============================
+     Calculate button
+     =============================== */
+  .burnout-calc-button {
+    display: inline-block;
+    margin-top: 1.25rem;
+    padding: 0.85rem 1.9rem;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    background-color: #0b5347;
+    color: #ffffff;
+  }
+
+  .burnout-calc-button:hover {
+    opacity: 0.95;
+  }
+
+  /* ===============================
+     Results layout
+     =============================== */
+  #burnout-results {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 1.75rem 1.75rem 1.5rem;
+    border-radius: 12px;
+    background: #f1f5f9;
+    border: 1px solid #d4d4d8;
+    display: none; /* shown after calculation */
+  }
+
+  #burnout-results h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+  }
+
+  .burnout-legend {
+    margin: 1rem 0 1.4rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .zone-pill {
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+  }
+
+  .zone-healthy {
+    background: #e7f8ef;
+    border-color: #3ba66c;
+    color: #215c39;
+  }
+
+  .zone-watch {
+    background: #fff3d6;
+    border-color: #d8a106;
+    color: #7a5a00;
+  }
+
+  .zone-risk {
+    background: #ffe4e1;
+    border-color: #e76868;
+    color: #7a1d1d;
+  }
+
+  .zone-critical {
+    background: #fde2e1;
+    border-color: #d01a3c;
+    color: #7a0f22;
+  }
+
+  .burnout-results-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 750px) {
+    .burnout-results-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .burnout-result-card {
+    background: #ffffff;
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .burnout-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .burnout-result-header h3 {
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  .burnout-score-line {
+    margin: 0.3rem 0;
+    font-weight: 500;
+  }
+
+  .burnout-zone-blurb {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .burnout-focus {
+    border-top: 1px solid #d4d4d8;
+    padding-top: 0.75rem;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .burnout-focus span {
+    font-weight: 600;
+  }
+
+  /* ===============================
+     Follow-up email + demographics
+     =============================== */
+  .burnout-followup {
+    max-width: 900px;
+    margin: 2rem auto 0;
+    padding: 1.75rem 1.75rem 1.5rem;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    display: none; /* shown after calculation */
+  }
+
+  .burnout-followup h3 {
+    margin-top: 0;
+    margin-bottom: 0.35rem;
+  }
+
+  .burnout-followup p.helper {
+    margin-top: 0;
+    font-size: 0.95rem;
+    color: #555;
+  }
+
+  .burnout-followup-grid {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem 1rem;
+  }
+
+  @media (min-width: 700px) {
+    .burnout-followup-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .burnout-followup label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+
+  .burnout-followup input[type="text"],
+  .burnout-followup input[type="email"],
+  .burnout-followup select {
+    width: 100%;
+    padding: 0.55rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.92rem;
+  }
+
+  .burnout-followup button[type="submit"] {
+    margin-top: 1rem;
+    padding: 0.75rem 1.75rem;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.96rem;
+    font-weight: 600;
+    background-color: #111827;
+    color: #ffffff;
+  }
+
+  .burnout-followup-status {
+    margin-top: 0.75rem;
+    font-size: 0.88rem;
+    color: #4b5563;
+  }
+
+  .burnout-followup-status.error {
+    color: #b91c1c;
+  }
+</style>
+
+<div id="burnout-assessment">
+
+  <!-- QUIZ -->
+  <form id="burnout-check" class="burnout-quiz">
+
+    <p><strong>Instructions:</strong> Think about the past two weeks and choose the option that best reflects your experience for each statement.</p>
+    <p><em>Scale: Always = 5, Often = 4, Sometimes = 3, Rarely = 2, Never = 1.</em></p>
+
+    <!-- WORKLOAD -->
+    <fieldset>
+      <legend><strong>Workload</strong></legend>
+
+      <p>I have enough time and resources to do my job well.</p>
+      <label><input type="radio" name="workload_q1" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="workload_q1" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="workload_q1" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="workload_q1" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="workload_q1" value="1"> <span>Never</span></label>
+
+      <p>I work at a sustainable pace.</p>
+      <label><input type="radio" name="workload_q2" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="workload_q2" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="workload_q2" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="workload_q2" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="workload_q2" value="1"> <span>Never</span></label>
+
+      <p>I have time in my day to pause or think strategically.</p>
+      <label><input type="radio" name="workload_q3" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="workload_q3" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="workload_q3" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="workload_q3" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="workload_q3" value="1"> <span>Never</span></label>
+    </fieldset>
+
+    <!-- CONTROL (AUTONOMY) -->
+    <fieldset>
+      <legend><strong>Control (Autonomy)</strong></legend>
+
+      <p>I have input into how I organize my work.</p>
+      <label><input type="radio" name="control_q1" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="control_q1" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="control_q1" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="control_q1" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="control_q1" value="1"> <span>Never</span></label>
+
+      <p>I can make decisions that affect my outcomes.</p>
+      <label><input type="radio" name="control_q2" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="control_q2" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="control_q2" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="control_q2" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="control_q2" value="1"> <span>Never</span></label>
+
+      <p>My schedule and pace feel manageable.</p>
+      <label><input type="radio" name="control_q3" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="control_q3" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="control_q3" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="control_q3" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="control_q3" value="1"> <span>Never</span></label>
+    </fieldset>
+
+    <!-- REWARD & RECOGNITION -->
+    <fieldset>
+      <legend><strong>Reward and Recognition</strong></legend>
+
+      <p>I feel my efforts are noticed and valued.</p>
+      <label><input type="radio" name="reward_q1" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="reward_q1" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="reward_q1" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="reward_q1" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="reward_q1" value="1"> <span>Never</span></label>
+
+      <p>When I do good work, I receive acknowledgment.</p>
+      <label><input type="radio" name="reward_q2" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="reward_q2" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="reward_q2" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="reward_q2" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="reward_q2" value="1"> <span>Never</span></label>
+
+      <p>My contributions feel meaningful to others.</p>
+      <label><input type="radio" name="reward_q3" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="reward_q3" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="reward_q3" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="reward_q3" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="reward_q3" value="1"> <span>Never</span></label>
+    </fieldset>
+
+    <!-- COMMUNITY -->
+    <fieldset>
+      <legend><strong>Community</strong></legend>
+
+      <p>I feel supported by my colleagues.</p>
+      <label><input type="radio" name="community_q1" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="community_q1" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="community_q1" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="community_q1" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="community_q1" value="1"> <span>Never</span></label>
+
+      <p>I can ask for help without fear of judgment.</p>
+      <label><input type="radio" name="community_q2" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="community_q2" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="community_q2" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="community_q2" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="community_q2" value="1"> <span>Never</span></label>
+
+      <p>I experience trust and respect within my team.</p>
+      <label><input type="radio" name="community_q3" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="community_q3" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="community_q3" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="community_q3" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="community_q3" value="1"> <span>Never</span></label>
+    </fieldset>
+
+    <!-- FAIRNESS -->
+    <fieldset>
+      <legend><strong>Fairness</strong></legend>
+
+      <p>Work expectations are applied consistently across people and teams.</p>
+      <label><input type="radio" name="fairness_q1" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="fairness_q1" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="fairness_q1" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="fairness_q1" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="fairness_q1" value="1"> <span>Never</span></label>
+
+      <p>I feel decisions that affect me are made transparently.</p>
+      <label><input type="radio" name="fairness_q2" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="fairness_q2" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="fairness_q2" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="fairness_q2" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="fairness_q2" value="1"> <span>Never</span></label>
+
+      <p>I can speak up when something feels inequitable.</p>
+      <label><input type="radio" name="fairness_q3" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="fairness_q3" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="fairness_q3" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="fairness_q3" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="fairness_q3" value="1"> <span>Never</span></label>
+    </fieldset>
+
+    <!-- VALUES ALIGNMENT -->
+    <fieldset>
+      <legend><strong>Values Alignment</strong></legend>
+
+      <p>My work aligns with my personal values.</p>
+      <label><input type="radio" name="values_q1" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="values_q1" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="values_q1" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="values_q1" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="values_q1" value="1"> <span>Never</span></label>
+
+      <p>I can see how my role contributes to something meaningful.</p>
+      <label><input type="radio" name="values_q2" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="values_q2" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="values_q2" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="values_q2" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="values_q2" value="1"> <span>Never</span></label>
+
+      <p>I feel proud of the impact my work creates.</p>
+      <label><input type="radio" name="values_q3" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="values_q3" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="values_q3" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="values_q3" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="values_q3" value="1"> <span>Never</span></label>
+    </fieldset>
+
+    <!-- RESTORATION -->
+    <fieldset>
+      <legend><strong>Restoration</strong></legend>
+
+      <p>I feel physically and mentally restored most mornings.</p>
+      <label><input type="radio" name="restoration_q1" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="restoration_q1" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="restoration_q1" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="restoration_q1" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="restoration_q1" value="1"> <span>Never</span></label>
+
+      <p>I have at least one reliable way to decompress after work.</p>
+      <label><input type="radio" name="restoration_q2" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="restoration_q2" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="restoration_q2" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="restoration_q2" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="restoration_q2" value="1"> <span>Never</span></label>
+
+      <p>I can focus and make decisions without mental fog.</p>
+      <label><input type="radio" name="restoration_q3" value="5" required> <span>Always</span></label>
+      <label><input type="radio" name="restoration_q3" value="4"> <span>Often</span></label>
+      <label><input type="radio" name="restoration_q3" value="3"> <span>Sometimes</span></label>
+      <label><input type="radio" name="restoration_q3" value="2"> <span>Rarely</span></label>
+      <label><input type="radio" name="restoration_q3" value="1"> <span>Never</span></label>
+    </fieldset>
+
+    <!-- Pre-submit note -->
+    <div class="burnout-pre-submit-box">
+      <h3 class="burnout-pre-submit-title">Before you see your profile</h3>
+      <p>
+        Your answers are for your reflection only. This check-in isn’t a diagnosis and
+        it can’t tell the full story of your mental health, but it can highlight where
+        work may be supporting or stretching you right now.
+      </p>
+      <p class="burnout-pre-submit-note">
+        After you see your results, you’ll have the option to email a copy to yourself
+        and, if you’d like, answer a few quick anonymous questions that help us
+        understand how burnout shows up across different roles and industries.
+      </p>
+    </div>
+
+    <button type="submit" id="calculate-burnout-profile" class="burnout-calc-button">
+      Calculate My Burnout Profile
+    </button>
+  </form>
+
+  <!-- RESULTS -->
+  <div id="burnout-results"></div>
+
+  <!-- FOLLOW-UP FORM -->
+  <section class="burnout-followup">
+    <h3>Send your results &amp; help us improve this tool</h3>
+    <p class="helper">
+      If you'd like a copy of your profile emailed to you, add your details below.
+      You can also share a few anonymous details about your role so we can better
+      understand how burnout shows up across different sectors.
+    </p>
+
+    <form id="burnout-followup-form">
+      <div class="burnout-followup-grid">
+        <div>
+          <label>Name (optional)</label>
+          <input type="text" name="name">
+        </div>
+
+        <div>
+          <label>Email to send your profile</label>
+          <input type="email" name="email" required>
+        </div>
+
+        <div>
+          <label>Your role</label>
+          <input type="text" name="role">
+        </div>
+
+        <div>
+          <label>Industry</label>
+          <input type="text" name="industry">
+        </div>
+
+        <div>
+          <label>Organization size</label>
+          <select name="org_size">
+            <option value="">Select...</option>
+            <option>1–49 employees</option>
+            <option>50–249 employees</option>
+            <option>250–999 employees</option>
+            <option>1000+ employees</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Country / Region</label>
+          <input type="text" name="country">
+        </div>
+      </div>
+
+      <button type="submit" class="burnout-followup-button">
+        Email me my profile
+      </button>
+    </form>
+
+    <p id="burnout-followup-status" class="burnout-followup-status"></p>
+  </section>
+</div>
+
+<script>
+  // ===========================
+  // CONFIG
+  // ===========================
+  const BURNOUT_SCRIPT_URL =
+    'https://script.google.com/macros/s/AKfycbyHyx4p4d4vLB24tPexbTtDtrRrks1lgx7sZ9Nr-vdwnmEt0n0c_ZGLoJ43lHRWTlxo7w/exec';
+
+  // Global store for most recent quiz results
+  window.burnoutResults = null;
+
+  // ===========================
+  // SCORING HELPERS
+  // ===========================
+  function getZone(score) {
+    if (score >= 13) {
+      return { name: 'Healthy', css: 'zone-healthy', blurb: 'Strong protective factors in this area.' };
+    } else if (score >= 10) {
+      return { name: 'Watch', css: 'zone-watch', blurb: 'Minor strain; small adjustments may help.' };
+    } else if (score >= 7) {
+      return { name: 'At-risk', css: 'zone-risk', blurb: 'Stressors here may be unsustainable over time.' };
+    } else {
+      return { name: 'Critical', css: 'zone-critical', blurb: 'High burnout risk; this area needs attention.' };
+    }
+  }
+
+  // ===========================
+  // QUIZ SUBMIT → CALCULATE SCORES
+  // ===========================
+  function handleBurnoutSubmit(e) {
+    e.preventDefault();
+    console.log('[Burnout] Calculate clicked');
+
+    const form            = document.getElementById('burnout-check');
+    const resultsContainer = document.getElementById('burnout-results');
+    const followupBox      = document.querySelector('.burnout-followup');
+
+    if (!form || !resultsContainer) {
+      console.error('[Burnout] Missing form or results container');
+      return;
+    }
+
+    const categories = [
+      { id: 'workload',    label: 'Workload',             questions: ['workload_q1','workload_q2','workload_q3'] },
+      { id: 'control',     label: 'Control (Autonomy)',   questions: ['control_q1','control_q2','control_q3'] },
+      { id: 'reward',      label: 'Reward & Recognition', questions: ['reward_q1','reward_q2','reward_q3'] },
+      { id: 'community',   label: 'Community',            questions: ['community_q1','community_q2','community_q3'] },
+      { id: 'fairness',    label: 'Fairness',             questions: ['fairness_q1','fairness_q2','fairness_q3'] },
+      { id: 'values',      label: 'Values Alignment',     questions: ['values_q1','values_q2','values_q3'] },
+      { id: 'restoration', label: 'Restoration',          questions: ['restoration_q1','restoration_q2','restoration_q3'] }
+    ];
+
+    let totalScore = 0;
+    const maxPerCategory = 15;
+    const maxTotal = categories.length * maxPerCategory;
+
+    const results = categories.map(cat => {
+      let score = 0;
+      cat.questions.forEach(name => {
+        const selected = document.querySelector(`input[name="${name}"]:checked`);
+        if (selected) score += Number(selected.value);
+      });
+      totalScore += score;
+      const zone = getZone(score);
+      return { ...cat, score, zone };
+    });
+
+    const overallPercent = Math.round((totalScore / maxTotal) * 100);
+
+    // Lowest-scoring category = good starting point
+    const sortedByScore = [...results].sort((a, b) => a.score - b.score);
+    const focusArea = sortedByScore[0];
+
+    // Store scores globally for follow-up form (current behaviour:
+    // overallCategory = focus area label, e.g. "Workload")
+    const scoresById = results.reduce((acc, r) => {
+      acc[r.id] = r.score;
+      return acc;
+    }, {});
+    window.burnoutResults = {
+      totalScore,
+      maxTotal,
+      overallPercent,
+      overallCategory: focusArea.label, // "Workload", etc.
+      scoresById
+    };
+    console.log('[Burnout] Scores stored for follow-up', window.burnoutResults);
+
+    // Build legend + cards
+    const legendHtml = `
+      <div class="burnout-legend">
+        <span class="zone-pill zone-healthy">Healthy</span>
+        <span class="zone-pill zone-watch">Watch</span>
+        <span class="zone-pill zone-risk">At-risk</span>
+        <span class="zone-pill zone-critical">Critical</span>
+      </div>
+    `;
+
+    let cardsHtml = '<div class="burnout-results-grid">';
+    results.forEach(r => {
+      cardsHtml += `
+        <div class="burnout-result-card">
+          <div class="burnout-result-header">
+            <h3>${r.label}</h3>
+            <span class="zone-pill ${r.zone.css}">${r.zone.name}</span>
+          </div>
+          <p class="burnout-score-line">${r.score} / ${maxPerCategory}</p>
+          <p class="burnout-zone-blurb">${r.zone.blurb}</p>
+        </div>
+      `;
+    });
+    cardsHtml += '</div>';
+
+    const resultsHtml = `
+      <h2>Your Burnout Self-Check Profile</h2>
+      <p><strong>Total score:</strong> ${totalScore} / ${maxTotal} (${overallPercent}% of the maximum protective score).</p>
+      <p>This check-in is a reflection tool, not a diagnosis. Use it to notice where work feels sustainable and where it may be stretching you too far.</p>
+      ${legendHtml}
+      ${cardsHtml}
+      <div class="burnout-focus">
+        <p><strong>Good place to start:</strong> <span>${focusArea.label}</span>
+        (${focusArea.score} / ${maxPerCategory}, ${focusArea.zone.name}). Choose one small change this week that could make this area feel a little lighter.</p>
+      </div>
+    `;
+
+    resultsContainer.innerHTML = resultsHtml;
+    resultsContainer.style.display = 'block';
+    if (followupBox) followupBox.style.display = 'block';
+
+    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ===========================
+  // FOLLOW-UP FORM → SEND TO APPS SCRIPT
+  // ===========================
+  async function handleFollowupSubmit(e) {
+    e.preventDefault();
+    console.log('[Burnout] Follow-up submit clicked');
+
+    const followupForm = document.getElementById('burnout-followup-form');
+    const statusEl     = document.getElementById('burnout-followup-status');
+    if (!followupForm || !statusEl) {
+      console.error('[Burnout] Follow-up form or status element not found');
+      return;
+    }
+
+    if (!window.burnoutResults) {
+      statusEl.textContent = 'Please calculate your burnout profile first.';
+      return;
+    }
+
+    const formData = new FormData(followupForm);
+    const scores   = window.burnoutResults.scoresById || {};
+
+    const payload = {
+      name:     formData.get('name')      || '',
+      email:    formData.get('email')     || '',
+      role:     formData.get('role')      || '',
+      org_size: formData.get('org_size')  || '',
+      industry: formData.get('industry')  || '',
+      country:  formData.get('country')   || '',
+
+      total_score:      window.burnoutResults.totalScore,
+      max_total:        window.burnoutResults.maxTotal,
+      overall_percent:  window.burnoutResults.overallPercent,
+      overall_category: window.burnoutResults.overallCategory, // focus area label
+
+      score_workload:    scores.workload    || 0,
+      score_control:     scores.control     || 0,
+      score_reward:      scores.reward      || 0,
+      score_community:   scores.community   || 0,
+      score_fairness:    scores.fairness    || 0,
+      score_values:      scores.values      || 0,
+      score_restoration: scores.restoration || 0,
+
+      user_agent: navigator.userAgent,
+      page_url:   window.location.href
+    };
+
+    statusEl.textContent = 'Sending your results...';
+
+    try {
+      const res = await fetch(BURNOUT_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      console.log('[Burnout] Apps Script response status:', res.status);
+
+      // It might be plain text ("OK") or JSON depending on backend;
+      // we don't *need* the body here, we just care that it worked.
+      if (!res.ok) {
+        throw new Error('Non-200 response from Apps Script: ' + res.status);
+      }
+
+      statusEl.textContent = 'All set. Check your email for a copy of your burnout profile.';
+      followupForm.reset();
+    } catch (err) {
+      console.error('[Burnout] Follow-up submit error:', err);
+      statusEl.textContent = 'Could not submit. Please check your connection and try again.';
+    }
+  }
+
+  // ===========================
+  // HOOK EVERYTHING UP
+  // ===========================
+  document.addEventListener('DOMContentLoaded', function () {
+    console.log('[Burnout] DOMContentLoaded');
+
+    const quizForm     = document.getElementById('burnout-check');
+    const followupForm = document.getElementById('burnout-followup-form');
+    const calcButton   = document.getElementById('calculate-burnout-profile');
+
+    if (quizForm) {
+      quizForm.addEventListener('submit', handleBurnoutSubmit);
+      console.log('[Burnout] Quiz form handler attached');
+
+      if (calcButton) {
+        calcButton.addEventListener('click', function () {
+          console.log('[Burnout] Calculate button click');
+          if (quizForm.requestSubmit) {
+            quizForm.requestSubmit();
+          } else {
+            quizForm.submit();
+          }
+        });
+      }
+    } else {
+      console.warn('[Burnout] Quiz form not found');
+    }
+
+    if (followupForm) {
+      followupForm.addEventListener('submit', handleFollowupSubmit);
+      console.log('[Burnout] Follow-up form handler attached');
+    } else {
+      console.warn('[Burnout] Follow-up form not found');
+    }
+  });
+</script>
   }
 
   /* ===============================
