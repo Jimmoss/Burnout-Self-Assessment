@@ -1,599 +1,407 @@
-// ===========================
-// CONFIG
-// ===========================
-const SHEET_ID         = '1h-INUM0-C9KP8-HcXrm5iY4WIIY-rU0gwvzn_YmCZ4A';
-const SHEET_ALL_NAME   = 'all';        // quiz-only log
-const SHEET_RESP_NAME  = 'Responses';  // enriched + email log
+// === CONFIG ===
+const SHEET_ID        = '1h-INUM0-C9KP8-HcXrm5iY4WIIY-rU0gwvzn_YmCZ4A';
+const ALL_SHEET_NAME  = 'All';
+const RESP_SHEET_NAME = 'Responses';
 
-// Columns for the "all" sheet (quiz-only)
-const ALL_HEADERS = [
-  'timestamp',
-  'source',
-  'totalScore',
-  'maxTotal',
-  'overallPercent',
-  'overallZone',
-  'focusAreaLabel',
-  'scoreWorkload',
-  'scoreControl',
-  'scoreReward',
-  'scoreCommunity',
-  'scoreFairness',
-  'scoreValues',
-  'scoreRestoration',
-  'pageUrl',
-  'userAgent'
-];
+/**
+ * Ensure headers for All + Responses.
+ * If headers already exist, we extend them if new columns were added.
+ */
+function ensureHeaders_() {
+  const ss   = SpreadsheetApp.openById(SHEET_ID);
+  const all  = ss.getSheetByName(ALL_SHEET_NAME);
+  const resp = ss.getSheetByName(RESP_SHEET_NAME);
 
-// Columns for the "Responses" sheet (follow-up + email)
-const RESP_HEADERS = [
-  'timestamp',
-  'source',
-  'name',
-  'email',
-  'role',
-  'industry',
-  'orgSize',
-  'country',
-  'totalScore',
-  'maxTotal',
-  'overallPercent',
-  'overallZone',
-  'focusAreaLabel',
-  'scoreWorkload',
-  'scoreControl',
-  'scoreReward',
-  'scoreCommunity',
-  'scoreFairness',
-  'scoreValues',
-  'scoreRestoration',
-  'pageUrl',
-  'userAgent'
-];
+  if (!all)  throw new Error('Sheet "All" not found');
+  if (!resp) throw new Error('Sheet "Responses" not found');
 
-// ===========================
-// Utility: get or create sheet with header row
-// ===========================
-function getOrCreateSheet_(name, headers) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  let sheet = ss.getSheetByName(name);
-  if (!sheet) {
-    sheet = ss.insertSheet(name);
+  const allHeaders = [
+    'timestamp',
+    'session_id',
+    'source',
+    'page_url',
+    'referrer',
+    'user_agent',
+    'browser_language',
+    'timezone',
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_term',
+    'utm_content',
+    'total_score',
+    'max_total',
+    'overall_percent',
+    'risk_index',
+    'overall_zone',
+    'focus_area_label',
+    'score_workload',
+    'score_control',
+    'score_reward',
+    'score_community',
+    'score_fairness',
+    'score_values',
+    'score_restoration',
+
+    // 21 raw answers
+    'workload_q1',
+    'workload_q2',
+    'workload_q3',
+    'control_q1',
+    'control_q2',
+    'control_q3',
+    'reward_q1',
+    'reward_q2',
+    'reward_q3',
+    'community_q1',
+    'community_q2',
+    'community_q3',
+    'fairness_q1',
+    'fairness_q2',
+    'fairness_q3',
+    'values_q1',
+    'values_q2',
+    'values_q3',
+    'restoration_q1',
+    'restoration_q2',
+    'restoration_q3'
+  ];
+
+  const respHeaders = [
+    'timestamp',
+    'session_id',
+    'source',
+    'page_url',
+    'referrer',
+    'user_agent',
+    'browser_language',
+    'timezone',
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_term',
+    'utm_content',
+
+    'name',
+    'email',
+    'role',
+    'org_size',
+    'industry',
+    'country',
+    'marketing_opt_in'
+
+    'total_score',
+    'max_total',
+    'overall_percent',
+    'risk_index',
+    'overall_zone',
+    'focus_area_label',
+    'score_workload',
+    'score_control',
+    'score_reward',
+    'score_community',
+    'score_fairness',
+    'score_values',
+    'score_restoration',
+
+    'results_html'
+  ];
+
+  // Helper to set or extend header row
+  function syncHeaderRow(sheet, targetHeaders) {
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
+
+    if (lastRow === 0) {
+      // Sheet empty: write full header row
+      sheet.getRange(1, 1, 1, targetHeaders.length).setValues([targetHeaders]);
+      return;
+    }
+
+    // Sheet has data → read current header row and extend if needed
+    const existing = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    const currentLen = existing.filter(String).length; // non-empty cells
+
+    if (currentLen < targetHeaders.length) {
+      const missing = targetHeaders.slice(currentLen);
+      sheet.getRange(1, currentLen + 1, 1, missing.length).setValues([missing]);
+    }
   }
 
-  // If sheet is empty, add headers
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(headers);
-  }
+  syncHeaderRow(all,  allHeaders);
+  syncHeaderRow(resp, respHeaders);
 
-  return sheet;
+  return {
+    all,
+    resp,
+    allHeaders,
+    respHeaders
+  };
 }
 
-// ===========================
-// Webhook entrypoint
-// ===========================
+/**
+ * Build a row for the All sheet from quiz-only payload.
+ */
+function buildAllRow_(payload, headers) {
+  const now = new Date();
+  const p = payload || {};
+
+  const row = headers.map(function (h) {
+    switch (h) {
+      case 'timestamp':        return now;
+      case 'session_id':       return p.session_id || '';
+      case 'source':           return p.source     || '';
+      case 'page_url':         return p.page_url   || '';
+      case 'referrer':         return p.referrer   || '';
+      case 'user_agent':       return p.user_agent || '';
+      case 'browser_language': return p.browser_language || '';
+      case 'timezone':         return p.timezone   || '';
+
+      case 'utm_source':       return p.utm_source   || '';
+      case 'utm_medium':       return p.utm_medium   || '';
+      case 'utm_campaign':     return p.utm_campaign || '';
+      case 'utm_term':         return p.utm_term     || '';
+      case 'utm_content':      return p.utm_content  || '';
+
+      case 'total_score':      return p.total_score      || 0;
+      case 'max_total':        return p.max_total        || 0;
+      case 'overall_percent':  return p.overall_percent  || 0;
+      case 'risk_index':       return p.risk_index       || 0;
+      case 'overall_zone':     return p.overall_zone     || '';
+      case 'focus_area_label': return p.focus_area_label || '';
+
+      case 'score_workload':    return p.score_workload    || 0;
+      case 'score_control':     return p.score_control     || 0;
+      case 'score_reward':      return p.score_reward      || 0;
+      case 'score_community':   return p.score_community   || 0;
+      case 'score_fairness':    return p.score_fairness    || 0;
+      case 'score_values':      return p.score_values      || 0;
+      case 'score_restoration': return p.score_restoration || 0;
+
+      case 'workload_q1':    return p.workload_q1    || 0;
+      case 'workload_q2':    return p.workload_q2    || 0;
+      case 'workload_q3':    return p.workload_q3    || 0;
+      case 'control_q1':     return p.control_q1     || 0;
+      case 'control_q2':     return p.control_q2     || 0;
+      case 'control_q3':     return p.control_q3     || 0;
+      case 'reward_q1':      return p.reward_q1      || 0;
+      case 'reward_q2':      return p.reward_q2      || 0;
+      case 'reward_q3':      return p.reward_q3      || 0;
+      case 'community_q1':   return p.community_q1   || 0;
+      case 'community_q2':   return p.community_q2   || 0;
+      case 'community_q3':   return p.community_q3   || 0;
+      case 'fairness_q1':    return p.fairness_q1    || 0;
+      case 'fairness_q2':    return p.fairness_q2    || 0;
+      case 'fairness_q3':    return p.fairness_q3    || 0;
+      case 'values_q1':      return p.values_q1      || 0;
+      case 'values_q2':      return p.values_q2      || 0;
+      case 'values_q3':      return p.values_q3      || 0;
+      case 'restoration_q1': return p.restoration_q1 || 0;
+      case 'restoration_q2': return p.restoration_q2 || 0;
+      case 'restoration_q3': return p.restoration_q3 || 0;
+
+      default: return '';
+    }
+  });
+
+  return row;
+}
+
+/**
+ * Build a row for the Responses sheet from follow-up payload.
+ */
+function buildResponsesRow_(payload, headers) {
+  const now = new Date();
+  const p = payload || {};
+
+  const row = headers.map(function (h) {
+    switch (h) {
+      case 'timestamp':        return now;
+      case 'session_id':       return p.session_id || '';
+      case 'source':           return p.source     || '';
+      case 'page_url':         return p.page_url   || '';
+      case 'referrer':         return p.referrer   || '';
+      case 'user_agent':       return p.user_agent || '';
+      case 'browser_language': return p.browser_language || '';
+      case 'timezone':         return p.timezone   || '';
+
+      case 'utm_source':       return p.utm_source   || '';
+      case 'utm_medium':       return p.utm_medium   || '';
+      case 'utm_campaign':     return p.utm_campaign || '';
+      case 'utm_term':         return p.utm_term     || '';
+      case 'utm_content':      return p.utm_content  || '';
+
+      case 'name':             return p.name     || '';
+      case 'email':            return p.email    || '';
+      case 'role':             return p.role     || '';
+      case 'org_size':         return p.org_size || '';
+      case 'industry':         return p.industry || '';
+      case 'country':          return p.country  || '';
+
+      case 'total_score':      return p.total_score      || 0;
+      case 'max_total':        return p.max_total        || 0;
+      case 'overall_percent':  return p.overall_percent  || 0;
+      case 'risk_index':       return p.risk_index       || 0;
+      case 'overall_zone':     return p.overall_zone     || '';
+      case 'focus_area_label': return p.focus_area_label || '';
+
+      case 'score_workload':    return p.score_workload    || 0;
+      case 'score_control':     return p.score_control     || 0;
+      case 'score_reward':      return p.score_reward      || 0;
+      case 'score_community':   return p.score_community   || 0;
+      case 'score_fairness':    return p.score_fairness    || 0;
+      case 'score_values':      return p.score_values      || 0;
+      case 'score_restoration': return p.score_restoration || 0;
+
+      case 'results_html':      return p.results_html || '';
+
+      default: return '';
+    }
+  });
+
+  return row;
+}
+
+/**
+ * Web app entry point.
+ * Expects POST with form field `data` containing JSON.
+ */
 function doPost(e) {
   try {
-    // Accept either urlencoded "data" or raw JSON body
-    const raw =
-      (e && e.parameter && e.parameter.data) ||
-      (e && e.postData && e.postData.contents) ||
-      '{}';
+    const raw = (e && e.parameter && e.parameter.data) || '';
+    if (!raw) {
+      throw new Error('Missing data parameter');
+    }
 
-    const body   = JSON.parse(raw);
-    const source = body.source || 'unknown';
+    const payload = JSON.parse(raw);
+    const source  = payload.source || 'quiz';
+
+    const { all, resp, allHeaders, respHeaders } = ensureHeaders_();
 
     if (source === 'quiz') {
-      return handleQuizEvent_(body);
+      const row = buildAllRow_(payload, allHeaders);
+      all.appendRow(row);
     } else if (source === 'followup') {
-      return handleFollowupEvent_(body);
+      const row = buildResponsesRow_(payload, respHeaders);
+      resp.appendRow(row);
     } else {
-      // Fallback: log to "all" so nothing is lost
-      return handleQuizEvent_(body);
+      // unknown source – log but don't crash
+      Logger.log('Unknown source in payload: ' + source);
     }
 
-  } catch (err) {
-    console.error(err);
-    const output = { success: false, error: String(err) };
     return ContentService
-      .createTextOutput(JSON.stringify(output))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// ===========================
-// Handle quiz-only event → "all"
-// ===========================
-function handleQuizEvent_(body) {
-  const sheet = getOrCreateSheet_(SHEET_ALL_NAME, ALL_HEADERS);
-
-  const row = [
-    new Date(),
-    body.source || 'quiz',
-    body.total_score      || '',
-    body.max_total        || '',
-    body.overall_percent  || '',
-    body.overall_zone     || '',
-    body.focus_area_label || '',
-    body.score_workload   || '',
-    body.score_control    || '',
-    body.score_reward     || '',
-    body.score_community  || '',
-    body.score_fairness   || '',
-    body.score_values     || '',
-    body.score_restoration|| '',
-    body.page_url         || '',
-    body.user_agent       || ''
-  ];
-
-  sheet.appendRow(row);
-
-  const output = { success: true, target: 'all' };
-  return ContentService
-    .createTextOutput(JSON.stringify(output))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-// ===========================
-// Handle follow-up event → "Responses"
-// ===========================
-function handleFollowupEvent_(body) {
-  const sheet = getOrCreateSheet_(SHEET_RESP_NAME, RESP_HEADERS);
-
-  const row = [
-    new Date(),
-    body.source || 'followup',
-    body.name        || '',
-    body.email       || '',
-    body.role        || '',
-    body.industry    || '',
-    body.org_size    || '',
-    body.country     || '',
-    body.total_score || '',
-    body.max_total   || '',
-    body.overall_percent  || '',
-    body.overall_zone     || '',
-    body.focus_area_label || '',
-    body.score_workload   || '',
-    body.score_control    || '',
-    body.score_reward     || '',
-    body.score_community  || '',
-    body.score_fairness   || '',
-    body.score_values     || '',
-    body.score_restoration|| '',
-    body.page_url         || '',
-    body.user_agent       || ''
-  ];
-
-  sheet.appendRow(row);
-
-  // Optional: send the email with HTML summary
-  if (body.email) {
-    var html =
-      body.results_html ||
-      (
-        '<p>Hi ' + (body.name || '') + ',</p>' +
-        '<p>Thanks for completing the Burnout Self-Check.</p>' +
-        '<p><strong>Your total score:</strong> ' +
-        (body.total_score || '') + ' / ' + (body.max_total || '') +
-        ' (' + (body.overall_percent || '') +
-        '% of the maximum protective score.)</p>' +
-        '<p>This check-in is a reflection tool, not a diagnosis. ' +
-        'Use it to notice where work feels sustainable and where it ' +
-        'may be stretching you too far.</p>' +
-        '<p>Warmly,<br>Jennifer Moss</p>'
-      );
-
-    MailApp.sendEmail({
-      to: body.email,
-      subject: 'Your Burnout Self-Check Profile',
-      htmlBody: html
-    });
-  }
-
-  const output = { success: true, target: 'Responses' };
-  return ContentService
-    .createTextOutput(JSON.stringify(output))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-// ===========================
-// Local test helpers (optional)
-// ===========================
-function test_quiz() {
-  const fakeEvent = {
-    parameter: {
-      data: JSON.stringify({
-        source: 'quiz',
-        total_score: 54,
-        max_total: 105,
-        overall_percent: 51,
-        overall_zone: 'At-risk',
-        focus_area_label: 'Workload',
-        score_workload: 6,
-        score_control: 9,
-        score_reward: 9,
-        score_community: 9,
-        score_fairness: 9,
-        score_values: 6,
-        score_restoration: 9,
-        page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
-        user_agent: 'Test UA'
-      })
-    }
-  };
-  doPost(fakeEvent);
-}
-
-function test_followup() {
-  const fakeEvent = {
-    parameter: {
-      data: JSON.stringify({
-        source: 'followup',
-        name: 'Test User',
-        email: 'test@example.com',
-        role: 'Tester',
-        industry: 'Consulting',
-        org_size: '1–49 employees',
-        country: 'Canada',
-        total_score: 54,
-        max_total: 105,
-        overall_percent: 51,
-        overall_zone: 'At-risk',
-        focus_area_label: 'Workload',
-        score_workload: 6,
-        score_control: 9,
-        score_reward: 9,
-        score_community: 9,
-        score_fairness: 9,
-        score_values: 6,
-        score_restoration: 9,
-        page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
-        user_agent: 'Test UA',
-        results_html: '<div>Sample results block</div>'
-      })
-    }
-  };
-  doPost(fakeEvent);
-}    const raw =
-      (e && e.parameter && e.parameter.data) ||
-      (e && e.postData && e.postData.contents) ||
-      '{}';
-
-    const body = JSON.parse(raw);
-
-    // "source" tells us which sheet to use:
-    //  - "quiz"    → 'all'
-    //  - "followup" (default) → 'Responses'
-    const source = body.source || 'followup';
-
-    // Common scoring fields (with fallbacks for older payloads)
-    const totalScore     = body.total_score     ?? body.totalScore     ?? '';
-    const maxTotal       = body.max_total       ?? body.maxTotal       ?? '';
-    const overallPercent = body.overall_percent ?? body.overallPercent ?? '';
-
-    const overallZone = body.overall_zone
-      || body.overallCategory
-      || body.overall_category
-      || '';
-
-    const focusAreaLabel = body.focus_area_label
-      || body.focusArea
-      || body.focus_area
-      || '';
-
-    const scoreWorkload    = body.score_workload    ?? body.scoreWorkload    ?? '';
-    const scoreControl     = body.score_control     ?? body.scoreControl     ?? '';
-    const scoreReward      = body.score_reward      ?? body.scoreReward      ?? '';
-    const scoreCommunity   = body.score_community   ?? body.scoreCommunity   ?? '';
-    const scoreFairness    = body.score_fairness    ?? body.scoreFairness    ?? '';
-    const scoreValues      = body.score_values      ?? body.scoreValues      ?? '';
-    const scoreRestoration = body.score_restoration ?? body.scoreRestoration ?? '';
-
-    const pageUrl   = body.page_url   || body.pageUrl   || '';
-    const userAgent = body.user_agent || body.userAgent || '';
-
-    if (source === 'quiz') {
-      // ===========================
-      // 1) QUIZ-ONLY LOG → "all"
-      // ===========================
-      const sheet = getSheet_(SHEET_NAME_ALL, ALL_HEADERS);
-
-      const row = [
-        new Date(),
-        totalScore,
-        maxTotal,
-        overallPercent,
-        overallZone,
-        focusAreaLabel,
-        scoreWorkload,
-        scoreControl,
-        scoreReward,
-        scoreCommunity,
-        scoreFairness,
-        scoreValues,
-        scoreRestoration,
-        pageUrl,
-        userAgent
-      ];
-
-      sheet.appendRow(row);
-
-    } else {
-      // ===========================
-      // 2) FOLLOW-UP LOG → "Responses"
-      // ===========================
-      const sheet = getSheet_(SHEET_NAME_RESPONSES, RESPONSE_HEADERS);
-
-      const name     = body.name     || '';
-      const email    = body.email    || '';
-      const role     = body.role     || '';
-      const industry = body.industry || '';
-      const orgSize  = body.org_size || body.orgSize || '';
-      const country  = body.country  || '';
-
-      const row = [
-        new Date(),
-        name,
-        email,
-        role,
-        industry,
-        orgSize,
-        country,
-        totalScore,
-        maxTotal,
-        overallPercent,
-        overallZone,
-        focusAreaLabel,
-        scoreWorkload,
-        scoreControl,
-        scoreReward,
-        scoreCommunity,
-        scoreFairness,
-        scoreValues,
-        scoreRestoration,
-        pageUrl,
-        userAgent
-      ];
-
-      sheet.appendRow(row);
-
-      // Optional email only for follow-up (when we have an email)
-      if (email) {
-        const html = body.results_html || `
-          <p>Hi ${name || ''},</p>
-          <p>Thanks for completing the Burnout Self-Check.</p>
-          <p><strong>Your total score:</strong> ${totalScore} / ${maxTotal}
-          (${overallPercent}% of the maximum protective score)</p>
-          <p>This check-in is a reflection tool, not a diagnosis. Use it to notice
-          where work feels sustainable and where it may be stretching you too far.</p>
-          <p>Warmly,<br>Jennifer Moss</p>
-        `;
-
-        MailApp.sendEmail({
-          to: email,
-          subject: 'Your Burnout Self-Check Profile',
-          htmlBody: html
-        });
-      }
-    }
-
-    const output = { success: true };
-    return ContentService
-      .createTextOutput(JSON.stringify(output))
+      .createTextOutput(JSON.stringify({ status: 'ok' }))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    console.error(err);
-    const output = { success: false, error: String(err) };
+    Logger.log('doPost error: ' + err);
     return ContentService
-      .createTextOutput(JSON.stringify(output))
+      .createTextOutput(JSON.stringify({ status: 'error', message: String(err) }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-// ===========================
-// Local test helpers
-// ===========================
-function test_doPost_quiz() {
-  const fakeEvent = {
-    postData: {
-      contents: JSON.stringify({
-        source: 'quiz',
-        total_score: 70,
-        max_total: 105,
-        overall_percent: 67,
-        overall_zone: 'Watch',
-        focus_area_label: 'Workload',
-        score_workload: 10,
-        score_control: 12,
-        score_reward: 8,
-        score_community: 11,
-        score_fairness: 9,
-        score_values: 7,
-        score_restoration: 13,
-        page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
-        user_agent: 'Test UA'
-      }),
-      type: 'application/json'
-    }
-  };
+/**
+ * === TEST HELPERS YOU CAN RUN MANUALLY ===
+ * These don't depend on Squarespace at all.
+ */
 
-  doPost(fakeEvent);
-}
-
-function test_doPost_followup() {
-  const fakeEvent = {
-    postData: {
-      contents: JSON.stringify({
-        source: 'followup',
-        name: 'Test User',
-        email: 'you@example.com',
-        role: 'Tester',
-        industry: 'Consulting',
-        org_size: '1–49 employees',
-        country: 'Canada',
-        total_score: 70,
-        max_total: 105,
-        overall_percent: 67,
-        overall_zone: 'Watch',
-        focus_area_label: 'Workload',
-        score_workload: 10,
-        score_control: 12,
-        score_reward: 8,
-        score_community: 11,
-        score_fairness: 9,
-        score_values: 7,
-        score_restoration: 13,
-        page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
-        user_agent: 'Test UA',
-        results_html: '<div>Sample results block</div>'
-      }),
-      type: 'application/json'
-    }
-  };
-
-  doPost(fakeEvent);
-}
-      body.score_restoration || '',
-      body.page_url || '',
-      body.user_agent || ''
-    ];
-
-    sheet.appendRow(row);
-
-    // Optional email to the participant
-    if (body.email) {
-      var html = `
-        <p>Hi ${body.name || ''},</p>
-        <p>Thanks for completing the Burnout Self-Check.</p>
-        <p><strong>Your total score:</strong> ${body.total_score} / ${body.max_total}
-        (${body.overall_percent}% of the maximum protective score)</p>
-        <p>This check-in is a reflection tool, not a diagnosis. Use it to notice
-        where work feels sustainable and where it may be stretching you too far.</p>
-        <p>Warmly,<br>Jennifer Moss</p>
-      `;
-
-      MailApp.sendEmail({
-        to: body.email,
-        subject: 'Your Burnout Self-Check Profile',
-        htmlBody: html
-      });
-    }
-
-    const output = { success: true };
-    return ContentService
-      .createTextOutput(JSON.stringify(output))
-      .setMimeType(ContentService.MimeType.JSON);
-
-  } catch (err) {
-    console.error(err);
-    const output = { success: false, error: String(err) };
-    return ContentService
-      .createTextOutput(JSON.stringify(output))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// ===========================
-// Local test helper
-// ===========================
-function test_doPost() {
+function test_QuizRow() {
+  const { all, allHeaders } = ensureHeaders_();
   const fakePayload = {
-    name: 'Test User',
-    email: 'test@example.com',
-    role: 'Tester',
-    industry: 'Consulting',
-    org_size: '1-49 employees',
-    country: 'Canada',
-    total_score: 70,
+    source: 'quiz',
+    session_id: 'test-session-123',
+    page_url: 'https://example.com',
+    referrer: 'https://google.com',
+    user_agent: 'Test UA',
+    browser_language: 'en-CA',
+    timezone: 'America/Toronto',
+    utm_source: 'google',
+    utm_medium: 'cpc',
+    utm_campaign: 'burnout-test',
+
+    total_score: 72,
     max_total: 105,
-    overall_percent: 67,
-    overall_category: 'Workload', // matches current front-end behaviour
-    score_workload: 10,
-    score_control: 12,
-    score_reward: 8,
+    overall_percent: 69,
+    risk_index: 31,
+    overall_zone: 'At-risk',
+    focus_area_label: 'Workload',
+
+    score_workload: 8,
+    score_control: 10,
+    score_reward: 9,
     score_community: 11,
-    score_fairness: 9,
-    score_values: 7,
-    score_restoration: 13,
-    page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
-    user_agent: 'Test UA'
+    score_fairness: 12,
+    score_values: 10,
+    score_restoration: 12,
+
+    // raw answers – arbitrary test numbers
+    workload_q1: 2,
+    workload_q2: 3,
+    workload_q3: 3,
+    control_q1: 3,
+    control_q2: 3,
+    control_q3: 3,
+    reward_q1: 4,
+    reward_q2: 3,
+    reward_q3: 2,
+    community_q1: 3,
+    community_q2: 4,
+    community_q3: 4,
+    fairness_q1: 5,
+    fairness_q2: 4,
+    fairness_q3: 3,
+    values_q1: 4,
+    values_q2: 5,
+    values_q3: 5,
+    restoration_q1: 3,
+    restoration_q2: 4,
+    restoration_q3: 3
   };
 
-  const fakeEvent = {
-    postData: {
-      contents: JSON.stringify(fakePayload),
-      type: 'application/json'
-    }
-  };
-
-  doPost(fakeEvent);
-}
-      body.score_community || '',      // Community
-      body.score_fairness || '',       // Fairness
-      body.score_values || '',         // Values
-      body.score_restoration || '',    // Restoration
-      body.user_agent || '',           // User Agent
-      body.page_url || ''              // Page URL
-    ];
-
-    sheet.appendRow(row);
-
-    // Optional email
-    if (body.email) {
-      MailApp.sendEmail({
-        to: body.email,
-        subject: 'Your Burnout Self-Check Profile',
-        htmlBody:
-          body.results_html ||
-          `<p>Thanks for completing the burnout self-check.</p>`
-      });
-    }
-
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: true }))
-      .setMimeType(ContentService.MimeType.JSON);
-
-  } catch (err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: false, error: String(err) }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
+  const row = buildAllRow_(fakePayload, allHeaders);
+  all.appendRow(row);
 }
 
+function test_ResponseRow() {
+  const { resp, respHeaders } = ensureHeaders_();
+  const fakePayload = {
+    source: 'followup',
+    session_id: 'test-session-123',
+    page_url: 'https://example.com',
+    referrer: 'https://google.com',
+    user_agent: 'Test UA',
+    browser_language: 'en-CA',
+    timezone: 'America/Toronto',
+    utm_source: 'google',
+    utm_medium: 'cpc',
+    utm_campaign: 'burnout-test',
 
-// =========================
-// LOCAL TEST HELPER
-// =========================
-function test_doPost() {
-  const fakeEvent = {
-    postData: {
-      contents: JSON.stringify({
-        name: 'Test User',
-        email: 'you@example.com',
-        role: 'Tester',
-        industry: 'Consulting',
-        org_size: '1–49 employees',
-        country: 'Canada',
-        total_score: 70,
-        max_total: 105,
-        overall_percent: 67,
-        overall_category: 'Workload',
-        score_workload: 10,
-        score_control: 12,
-        score_reward: 8,
-        score_community: 11,
-        score_fairness: 9,
-        score_values: 7,
-        score_restoration: 13,
-        user_agent: 'Test UA',
-        page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
-        results_html: '<div>Sample results block</div>'
-      }),
-      type: 'application/json'
-    }
+    name: 'Test Person',
+    email: 'test@example.com',
+    role: 'Manager',
+    org_size: '50–249 employees',
+    industry: 'Healthcare',
+    country: 'Canada',
+
+    total_score: 72,
+    max_total: 105,
+    overall_percent: 69,
+    risk_index: 31,
+    overall_zone: 'At-risk',
+    focus_area_label: 'Workload',
+
+    score_workload: 8,
+    score_control: 10,
+    score_reward: 9,
+    score_community: 11,
+    score_fairness: 12,
+    score_values: 10,
+    score_restoration: 12,
+
+    results_html: '<p>Sample results HTML</p>'
   };
 
-  doPost(fakeEvent);
+  const row = buildResponsesRow_(fakePayload, respHeaders);
+  resp.appendRow(row);
 }
