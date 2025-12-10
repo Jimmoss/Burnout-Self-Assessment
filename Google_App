@@ -1,55 +1,53 @@
-// =========================
+// ===========================
 // CONFIG
-// =========================
+// ===========================
 const SHEET_ID   = '1h-INUM0-C9KP8-HcXrm5iY4WIIY-rU0gwvzn_YmCZ4A';
 const SHEET_NAME = 'Responses';
 
-// =========================
-// SHEET + HEADER SETUP
-// =========================
+// ===========================
+// Ensure sheet + header row exist
+// ===========================
 function getSheet_() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName(SHEET_NAME);
-
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
   }
 
-  // Header row if empty sheet
   if (sheet.getLastRow() === 0) {
     sheet.appendRow([
-  'Timestamp',
-  'Name',
-  'Email',
-  'Role',
-  'Industry',
-  'Org Size',
-  'Country / Region',
-  'Total Score',
-  'Max Total',
-  'Overall %',
-  'Overall Zone',       
-  'Focus Area',         
-  'Workload',
-  'Control',
-  'Reward',
-  'Community',
-  'Fairness',
-  'Values',
-  'Restoration',
-  'User Agent',
-  'Page URL'
-]);
+      'timestamp',
+      'name',
+      'email',
+      'role',
+      'industry',
+      'orgSize',
+      'country',
+      'totalScore',
+      'maxTotal',
+      'overallPercent',
+      'overallCategory',   // currently the lowest-scoring area label (e.g. "Workload")
+      'scoreWorkload',
+      'scoreControl',
+      'scoreReward',
+      'scoreCommunity',
+      'scoreFairness',
+      'scoreValues',
+      'scoreRestoration',
+      'pageUrl',
+      'userAgent'
+    ]);
   }
 
   return sheet;
 }
 
-// =========================
-// MAIN WEBHOOK HANDLER
-// =========================
+// ===========================
+// Webhook entrypoint
+// ===========================
 function doPost(e) {
   try {
+    // Accept either raw JSON body or urlencoded "data" param
     const raw =
       (e && e.parameter && e.parameter.data) ||
       (e && e.postData && e.postData.contents) ||
@@ -59,21 +57,98 @@ function doPost(e) {
     const sheet = getSheet_();
 
     const row = [
-      new Date(),                      // Timestamp
-      body.name || '',                 // Name
-      body.email || '',                // Email
-      body.role || '',                 // Role
-      body.industry || '',             // Industry
-      body.org_size || '',             // Org Size
-      body.country || '',              // Country / Region
-      body.total_score || '',          // Total Score
-      body.max_total || '',            // Max Total
-      body.overall_percent || '',      // Overall %
-      body.overall_category || '',     // Overall Category
-      body.focus_area || '',           // Focus Area
-      body.score_workload || '',       // Workload
-      body.score_control || '',        // Control
-      body.score_reward || '',         // Reward
+      new Date(),
+      body.name || '',
+      body.email || '',
+      body.role || '',
+      body.industry || '',
+      body.org_size || '',
+      body.country || '',
+      body.total_score || '',
+      body.max_total || '',
+      body.overall_percent || '',
+      body.overall_category || '',
+      body.score_workload || '',
+      body.score_control || '',
+      body.score_reward || '',
+      body.score_community || '',
+      body.score_fairness || '',
+      body.score_values || '',
+      body.score_restoration || '',
+      body.page_url || '',
+      body.user_agent || ''
+    ];
+
+    sheet.appendRow(row);
+
+    // Optional email to the participant
+    if (body.email) {
+      var html = `
+        <p>Hi ${body.name || ''},</p>
+        <p>Thanks for completing the Burnout Self-Check.</p>
+        <p><strong>Your total score:</strong> ${body.total_score} / ${body.max_total}
+        (${body.overall_percent}% of the maximum protective score)</p>
+        <p>This check-in is a reflection tool, not a diagnosis. Use it to notice
+        where work feels sustainable and where it may be stretching you too far.</p>
+        <p>Warmly,<br>Jennifer Moss</p>
+      `;
+
+      MailApp.sendEmail({
+        to: body.email,
+        subject: 'Your Burnout Self-Check Profile',
+        htmlBody: html
+      });
+    }
+
+    const output = { success: true };
+    return ContentService
+      .createTextOutput(JSON.stringify(output))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error(err);
+    const output = { success: false, error: String(err) };
+    return ContentService
+      .createTextOutput(JSON.stringify(output))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ===========================
+// Local test helper
+// ===========================
+function test_doPost() {
+  const fakePayload = {
+    name: 'Test User',
+    email: 'test@example.com',
+    role: 'Tester',
+    industry: 'Consulting',
+    org_size: '1-49 employees',
+    country: 'Canada',
+    total_score: 70,
+    max_total: 105,
+    overall_percent: 67,
+    overall_category: 'Workload', // matches current front-end behaviour
+    score_workload: 10,
+    score_control: 12,
+    score_reward: 8,
+    score_community: 11,
+    score_fairness: 9,
+    score_values: 7,
+    score_restoration: 13,
+    page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
+    user_agent: 'Test UA'
+  };
+
+  const fakeEvent = {
+    postData: {
+      contents: JSON.stringify(fakePayload),
+      type: 'application/json'
+    }
+  };
+
+  doPost(fakeEvent);
+}
       body.score_community || '',      // Community
       body.score_fairness || '',       // Fairness
       body.score_values || '',         // Values
