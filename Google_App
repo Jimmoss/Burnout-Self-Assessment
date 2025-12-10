@@ -1,20 +1,19 @@
 // ===========================
 // CONFIG
 // ===========================
-const SHEET_ID = '1h-INUM0-C9KP8-HcXrm5iY4WIIY-rU0gwvzn_YmCZ4A';
+const SHEET_ID         = '1h-INUM0-C9KP8-HcXrm5iY4WIIY-rU0gwvzn_YmCZ4A';
+const SHEET_ALL_NAME   = 'all';        // quiz-only log
+const SHEET_RESP_NAME  = 'Responses';  // enriched + email log
 
-// Tab names
-const SHEET_NAME_ALL       = 'all';
-const SHEET_NAME_RESPONSES = 'Responses';
-
-// Header rows
+// Columns for the "all" sheet (quiz-only)
 const ALL_HEADERS = [
   'timestamp',
+  'source',
   'totalScore',
   'maxTotal',
   'overallPercent',
-  'overallZone',       // Healthy / Watch / At-risk / Critical
-  'focusAreaLabel',    // e.g. "Workload"
+  'overallZone',
+  'focusAreaLabel',
   'scoreWorkload',
   'scoreControl',
   'scoreReward',
@@ -26,8 +25,10 @@ const ALL_HEADERS = [
   'userAgent'
 ];
 
-const RESPONSE_HEADERS = [
+// Columns for the "Responses" sheet (follow-up + email)
+const RESP_HEADERS = [
   'timestamp',
+  'source',
   'name',
   'email',
   'role',
@@ -37,8 +38,8 @@ const RESPONSE_HEADERS = [
   'totalScore',
   'maxTotal',
   'overallPercent',
-  'overallZone',       // Healthy / Watch / At-risk / Critical
-  'focusAreaLabel',    // e.g. "Workload"
+  'overallZone',
+  'focusAreaLabel',
   'scoreWorkload',
   'scoreControl',
   'scoreReward',
@@ -51,16 +52,16 @@ const RESPONSE_HEADERS = [
 ];
 
 // ===========================
-// Sheet helper
+// Utility: get or create sheet with header row
 // ===========================
-function getSheet_(name, headers) {
+function getOrCreateSheet_(name, headers) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName(name);
   if (!sheet) {
     sheet = ss.insertSheet(name);
   }
 
-  // Ensure header row exists
+  // If sheet is empty, add headers
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
   }
@@ -73,8 +74,188 @@ function getSheet_(name, headers) {
 // ===========================
 function doPost(e) {
   try {
-    // Accept either raw JSON body or urlencoded "data" param
+    // Accept either urlencoded "data" or raw JSON body
     const raw =
+      (e && e.parameter && e.parameter.data) ||
+      (e && e.postData && e.postData.contents) ||
+      '{}';
+
+    const body   = JSON.parse(raw);
+    const source = body.source || 'unknown';
+
+    if (source === 'quiz') {
+      return handleQuizEvent_(body);
+    } else if (source === 'followup') {
+      return handleFollowupEvent_(body);
+    } else {
+      // Fallback: log to "all" so nothing is lost
+      return handleQuizEvent_(body);
+    }
+
+  } catch (err) {
+    console.error(err);
+    const output = { success: false, error: String(err) };
+    return ContentService
+      .createTextOutput(JSON.stringify(output))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ===========================
+// Handle quiz-only event → "all"
+// ===========================
+function handleQuizEvent_(body) {
+  const sheet = getOrCreateSheet_(SHEET_ALL_NAME, ALL_HEADERS);
+
+  const row = [
+    new Date(),
+    body.source || 'quiz',
+    body.total_score      || '',
+    body.max_total        || '',
+    body.overall_percent  || '',
+    body.overall_zone     || '',
+    body.focus_area_label || '',
+    body.score_workload   || '',
+    body.score_control    || '',
+    body.score_reward     || '',
+    body.score_community  || '',
+    body.score_fairness   || '',
+    body.score_values     || '',
+    body.score_restoration|| '',
+    body.page_url         || '',
+    body.user_agent       || ''
+  ];
+
+  sheet.appendRow(row);
+
+  const output = { success: true, target: 'all' };
+  return ContentService
+    .createTextOutput(JSON.stringify(output))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ===========================
+// Handle follow-up event → "Responses"
+// ===========================
+function handleFollowupEvent_(body) {
+  const sheet = getOrCreateSheet_(SHEET_RESP_NAME, RESP_HEADERS);
+
+  const row = [
+    new Date(),
+    body.source || 'followup',
+    body.name        || '',
+    body.email       || '',
+    body.role        || '',
+    body.industry    || '',
+    body.org_size    || '',
+    body.country     || '',
+    body.total_score || '',
+    body.max_total   || '',
+    body.overall_percent  || '',
+    body.overall_zone     || '',
+    body.focus_area_label || '',
+    body.score_workload   || '',
+    body.score_control    || '',
+    body.score_reward     || '',
+    body.score_community  || '',
+    body.score_fairness   || '',
+    body.score_values     || '',
+    body.score_restoration|| '',
+    body.page_url         || '',
+    body.user_agent       || ''
+  ];
+
+  sheet.appendRow(row);
+
+  // Optional: send the email with HTML summary
+  if (body.email) {
+    var html =
+      body.results_html ||
+      (
+        '<p>Hi ' + (body.name || '') + ',</p>' +
+        '<p>Thanks for completing the Burnout Self-Check.</p>' +
+        '<p><strong>Your total score:</strong> ' +
+        (body.total_score || '') + ' / ' + (body.max_total || '') +
+        ' (' + (body.overall_percent || '') +
+        '% of the maximum protective score.)</p>' +
+        '<p>This check-in is a reflection tool, not a diagnosis. ' +
+        'Use it to notice where work feels sustainable and where it ' +
+        'may be stretching you too far.</p>' +
+        '<p>Warmly,<br>Jennifer Moss</p>'
+      );
+
+    MailApp.sendEmail({
+      to: body.email,
+      subject: 'Your Burnout Self-Check Profile',
+      htmlBody: html
+    });
+  }
+
+  const output = { success: true, target: 'Responses' };
+  return ContentService
+    .createTextOutput(JSON.stringify(output))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ===========================
+// Local test helpers (optional)
+// ===========================
+function test_quiz() {
+  const fakeEvent = {
+    parameter: {
+      data: JSON.stringify({
+        source: 'quiz',
+        total_score: 54,
+        max_total: 105,
+        overall_percent: 51,
+        overall_zone: 'At-risk',
+        focus_area_label: 'Workload',
+        score_workload: 6,
+        score_control: 9,
+        score_reward: 9,
+        score_community: 9,
+        score_fairness: 9,
+        score_values: 6,
+        score_restoration: 9,
+        page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
+        user_agent: 'Test UA'
+      })
+    }
+  };
+  doPost(fakeEvent);
+}
+
+function test_followup() {
+  const fakeEvent = {
+    parameter: {
+      data: JSON.stringify({
+        source: 'followup',
+        name: 'Test User',
+        email: 'test@example.com',
+        role: 'Tester',
+        industry: 'Consulting',
+        org_size: '1–49 employees',
+        country: 'Canada',
+        total_score: 54,
+        max_total: 105,
+        overall_percent: 51,
+        overall_zone: 'At-risk',
+        focus_area_label: 'Workload',
+        score_workload: 6,
+        score_control: 9,
+        score_reward: 9,
+        score_community: 9,
+        score_fairness: 9,
+        score_values: 6,
+        score_restoration: 9,
+        page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
+        user_agent: 'Test UA',
+        results_html: '<div>Sample results block</div>'
+      })
+    }
+  };
+  doPost(fakeEvent);
+}    const raw =
       (e && e.parameter && e.parameter.data) ||
       (e && e.postData && e.postData.contents) ||
       '{}';
