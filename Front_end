@@ -1,79 +1,279 @@
-<!-- ===========================
-     Burnout Self-Check Widget
-     Quiz + Results + Email Capture
-     =========================== -->
+// ===========================
+// CONFIG
+// ===========================
+const SHEET_ID = '1h-INUM0-C9KP8-HcXrm5iY4WIIY-rU0gwvzn_YmCZ4A';
 
-<style>
-  /* ===============================
-     Quiz container + basic text
-     =============================== */
-  .burnout-quiz {
-    max-width: 800px;
-    margin: 0 auto 2rem;
-    font-size: 16px;
-    line-height: 1.5;
+// Tab names
+const SHEET_NAME_ALL       = 'all';
+const SHEET_NAME_RESPONSES = 'Responses';
+
+// Header rows
+const ALL_HEADERS = [
+  'timestamp',
+  'totalScore',
+  'maxTotal',
+  'overallPercent',
+  'overallZone',       // Healthy / Watch / At-risk / Critical
+  'focusAreaLabel',    // e.g. "Workload"
+  'scoreWorkload',
+  'scoreControl',
+  'scoreReward',
+  'scoreCommunity',
+  'scoreFairness',
+  'scoreValues',
+  'scoreRestoration',
+  'pageUrl',
+  'userAgent'
+];
+
+const RESPONSE_HEADERS = [
+  'timestamp',
+  'name',
+  'email',
+  'role',
+  'industry',
+  'orgSize',
+  'country',
+  'totalScore',
+  'maxTotal',
+  'overallPercent',
+  'overallZone',       // Healthy / Watch / At-risk / Critical
+  'focusAreaLabel',    // e.g. "Workload"
+  'scoreWorkload',
+  'scoreControl',
+  'scoreReward',
+  'scoreCommunity',
+  'scoreFairness',
+  'scoreValues',
+  'scoreRestoration',
+  'pageUrl',
+  'userAgent'
+];
+
+// ===========================
+// Sheet helper
+// ===========================
+function getSheet_(name, headers) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
   }
 
-  .burnout-quiz > p {
-    margin-bottom: 0.75rem;
+  // Ensure header row exists
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
   }
 
-  /* ===============================
-     Fieldset “cards”
-     =============================== */
-  .burnout-quiz fieldset {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 1.75rem 1.5rem 1.25rem;
-    margin: 1.5rem 0;
-    background: #fafafa;
-    position: relative;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  }
+  return sheet;
+}
 
-  .burnout-quiz legend {
-    font-weight: 600;
-    font-size: 1.1rem;
-    padding: 0.35rem 0.75rem;
-    background: #ffffff;
-    border-radius: 6px;
-    margin-left: 0.25rem;
-    position: relative;
-    top: -0.3rem;
-    border: 1px solid #ddd;
-  }
+// ===========================
+// Webhook entrypoint
+// ===========================
+function doPost(e) {
+  try {
+    // Accept either raw JSON body or urlencoded "data" param
+    const raw =
+      (e && e.parameter && e.parameter.data) ||
+      (e && e.postData && e.postData.contents) ||
+      '{}';
 
-  /* ===============================
-     Questions / answers
-     =============================== */
-  .burnout-quiz p {
-    margin: 0.9rem 0 0.35rem;
-    font-weight: 500;
-  }
+    const body = JSON.parse(raw);
 
-  .burnout-quiz label {
-    display: block;
-    margin: 0.1rem 0 0.1rem 1.25rem;
-    font-weight: 400;
-  }
+    // "source" tells us which sheet to use:
+    //  - "quiz"    → 'all'
+    //  - "followup" (default) → 'Responses'
+    const source = body.source || 'followup';
 
-  .burnout-quiz input[type="radio"] {
-    margin-right: 0.35rem;
-  }
+    // Common scoring fields (with fallbacks for older payloads)
+    const totalScore     = body.total_score     ?? body.totalScore     ?? '';
+    const maxTotal       = body.max_total       ?? body.maxTotal       ?? '';
+    const overallPercent = body.overall_percent ?? body.overallPercent ?? '';
 
-  .burnout-quiz input[type="radio"]:checked + span {
-    font-weight: 600;
-    color: #000;
-  }
+    const overallZone = body.overall_zone
+      || body.overallCategory
+      || body.overall_category
+      || '';
 
-  @media (min-width: 768px) {
-    .burnout-quiz fieldset p + label,
-    .burnout-quiz fieldset p + label ~ label {
-      display: inline-flex;
-      align-items: center;
-      margin: 0.15rem 1.5rem 0.15rem 0;
-      margin-left: 0;
+    const focusAreaLabel = body.focus_area_label
+      || body.focusArea
+      || body.focus_area
+      || '';
+
+    const scoreWorkload    = body.score_workload    ?? body.scoreWorkload    ?? '';
+    const scoreControl     = body.score_control     ?? body.scoreControl     ?? '';
+    const scoreReward      = body.score_reward      ?? body.scoreReward      ?? '';
+    const scoreCommunity   = body.score_community   ?? body.scoreCommunity   ?? '';
+    const scoreFairness    = body.score_fairness    ?? body.scoreFairness    ?? '';
+    const scoreValues      = body.score_values      ?? body.scoreValues      ?? '';
+    const scoreRestoration = body.score_restoration ?? body.scoreRestoration ?? '';
+
+    const pageUrl   = body.page_url   || body.pageUrl   || '';
+    const userAgent = body.user_agent || body.userAgent || '';
+
+    if (source === 'quiz') {
+      // ===========================
+      // 1) QUIZ-ONLY LOG → "all"
+      // ===========================
+      const sheet = getSheet_(SHEET_NAME_ALL, ALL_HEADERS);
+
+      const row = [
+        new Date(),
+        totalScore,
+        maxTotal,
+        overallPercent,
+        overallZone,
+        focusAreaLabel,
+        scoreWorkload,
+        scoreControl,
+        scoreReward,
+        scoreCommunity,
+        scoreFairness,
+        scoreValues,
+        scoreRestoration,
+        pageUrl,
+        userAgent
+      ];
+
+      sheet.appendRow(row);
+
+    } else {
+      // ===========================
+      // 2) FOLLOW-UP LOG → "Responses"
+      // ===========================
+      const sheet = getSheet_(SHEET_NAME_RESPONSES, RESPONSE_HEADERS);
+
+      const name     = body.name     || '';
+      const email    = body.email    || '';
+      const role     = body.role     || '';
+      const industry = body.industry || '';
+      const orgSize  = body.org_size || body.orgSize || '';
+      const country  = body.country  || '';
+
+      const row = [
+        new Date(),
+        name,
+        email,
+        role,
+        industry,
+        orgSize,
+        country,
+        totalScore,
+        maxTotal,
+        overallPercent,
+        overallZone,
+        focusAreaLabel,
+        scoreWorkload,
+        scoreControl,
+        scoreReward,
+        scoreCommunity,
+        scoreFairness,
+        scoreValues,
+        scoreRestoration,
+        pageUrl,
+        userAgent
+      ];
+
+      sheet.appendRow(row);
+
+      // Optional email only for follow-up (when we have an email)
+      if (email) {
+        const html = body.results_html || `
+          <p>Hi ${name || ''},</p>
+          <p>Thanks for completing the Burnout Self-Check.</p>
+          <p><strong>Your total score:</strong> ${totalScore} / ${maxTotal}
+          (${overallPercent}% of the maximum protective score)</p>
+          <p>This check-in is a reflection tool, not a diagnosis. Use it to notice
+          where work feels sustainable and where it may be stretching you too far.</p>
+          <p>Warmly,<br>Jennifer Moss</p>
+        `;
+
+        MailApp.sendEmail({
+          to: email,
+          subject: 'Your Burnout Self-Check Profile',
+          htmlBody: html
+        });
+      }
     }
+
+    const output = { success: true };
+    return ContentService
+      .createTextOutput(JSON.stringify(output))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error(err);
+    const output = { success: false, error: String(err) };
+    return ContentService
+      .createTextOutput(JSON.stringify(output))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ===========================
+// Local test helpers
+// ===========================
+function test_doPost_quiz() {
+  const fakeEvent = {
+    postData: {
+      contents: JSON.stringify({
+        source: 'quiz',
+        total_score: 70,
+        max_total: 105,
+        overall_percent: 67,
+        overall_zone: 'Watch',
+        focus_area_label: 'Workload',
+        score_workload: 10,
+        score_control: 12,
+        score_reward: 8,
+        score_community: 11,
+        score_fairness: 9,
+        score_values: 7,
+        score_restoration: 13,
+        page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
+        user_agent: 'Test UA'
+      }),
+      type: 'application/json'
+    }
+  };
+
+  doPost(fakeEvent);
+}
+
+function test_doPost_followup() {
+  const fakeEvent = {
+    postData: {
+      contents: JSON.stringify({
+        source: 'followup',
+        name: 'Test User',
+        email: 'you@example.com',
+        role: 'Tester',
+        industry: 'Consulting',
+        org_size: '1–49 employees',
+        country: 'Canada',
+        total_score: 70,
+        max_total: 105,
+        overall_percent: 67,
+        overall_zone: 'Watch',
+        focus_area_label: 'Workload',
+        score_workload: 10,
+        score_control: 12,
+        score_reward: 8,
+        score_community: 11,
+        score_fairness: 9,
+        score_values: 7,
+        score_restoration: 13,
+        page_url: 'https://www.jennifer-moss.com/burnout-self-assessment',
+        user_agent: 'Test UA',
+        results_html: '<div>Sample results block</div>'
+      }),
+      type: 'application/json'
+    }
+  };
+
+  doPost(fakeEvent);
+}
   }
 
   /* ===============================
